@@ -256,7 +256,7 @@ DClassBicharacterNaive := function(S, D, C)
   return M;
 end;
 
-RegularRepresentationBicharacterNaive := function(S)
+RegularRepresentationBiCharacterNaive := function(S)
   local C, n, mat, D, DD;
 
   C   := SConjugacyClassReps(S);
