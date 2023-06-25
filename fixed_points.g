@@ -1,4 +1,4 @@
-LoadPackage("semigroups");
+LoadPackage("semigroups");;
 
 ##################################################
 ###   Character-equivalence representatives    ###
@@ -9,13 +9,15 @@ TransversalIdempotents := function(S)
 end;
 
 SConjugacyClassReps := function(S)
-  local D, out, C, map, Conj, Dom;
+  local D, out, C, map;
 
   D := List(RegularDClasses(S), GroupHClass);
   D := List(D, IsomorphismPermGroup);
   out := [];
   for map in D do
     C := List(ConjugacyClasses(CharacterTable(Range(map))), Representative);
+    # Ugly fix: ensures that the conjugacy classes are computed 
+    # in the same order than for the group character table
     map := InverseGeneralMapping(map);
     C := List(C, x -> x ^ map);
     Append(out, C);
@@ -23,250 +25,251 @@ SConjugacyClassReps := function(S)
   return out;
 end;
 
-DConjugacyClassReps := function(S, D)
-  # Note: D must be regular.
-  local H, HH, out, C, map;
-
-  H   := GroupHClass(D);
-  map := IsomorphismPermGroup(H);
-  HH  := Range(map);
-  map := InverseGeneralMapping(map);
-  C   := List(ConjugacyClasses(HH), Representative);
-  C   := List(C, x -> x ^ map);
-
-  return C;
-end;
-
-###################
-### Green Pairs ###
-###################
-
-LTransitions := function(S, D, H)
-  local deg, x, targets, transitions, y, l, lp, k;
-
-  deg     := DegreeOfTransformationSemigroup(S);
-  x       := ImageListOfTransformation(Representative(H));
-  x       := Concatenation(x, [Length(x)+1..deg]);
-  targets := List(HClasses(RClass(H)), Representative);
-  transitions := [];
-
-  for y in targets do
-    y := ImageListOfTransformation(y);
-    y := Concatenation(y, [Length(y)+1..deg]);
-    l := ListWithIdenticalEntries(deg, x[1]);
-    lp := ListWithIdenticalEntries(deg, y[1]);
-    for k in [1..deg] do
-      l[x[k]] := y[k];
-      lp[y[k]] := x[k];
-    od;
-    Append(transitions, [Transformation(l), Transformation(lp)]);
-  od;
-
-  return transitions;
-end;
-
-RTransitions := function(S, D, H)
-  local deg, x, targets, transitions, y, r, rp, k;
-
-  deg     := DegreeOfTransformationSemigroup(S);
-  x       := ImageListOfTransformation(Representative(H));
-  x       := Concatenation(x, [Length(x)+1..deg]);
-  targets := List(HClasses(LClass(H)), Representative);
-  transitions := [];
-
-  for y in targets do
-    r := List([1..deg], x -> 1);
-    rp := List([1..deg], x -> 1);
-    y := ImageListOfTransformation(y);
-    y := Concatenation(y, [Length(y)+1..deg]);
-    for k in [1..deg] do
-      r[k] := Position(x, y[k]);
-      rp[k] := Position(y, x[k]);
-    od;
-    Append(transitions, [Transformation(r), Transformation(rp)]);
-  od;
-
-  return transitions;
-end;
-
-#############################
-###   L-class character   ###
-#############################
-
-# TODO : Rewrite using the Green pair functions
-
-LClassBicharacter := function(S, e, RepS)
-  local D, H, map, HH, deg, im_e, l_e_box,
-        l_mults, l_to_first, l_from_first, l_transitions, l_returns,
-        ns, RepG, ng, M, a, g, b, s, ind, l, lp, x, y;
-
-  D   := DClass(S, e);
-  H   := HClass(S, e);
-  map := IsomorphismPermGroup(H);
-  HH  := Range(map);
-  deg := DegreeOfTransformationSemigroup(S);
-
-  im_e    := ImageSetOfTransformation(e, deg);
-  l_e_box := Position(LambdaOrb(D), im_e);
-
-  l_mults       := LambdaOrbMults(LambdaOrb(D), LambdaOrbSCCIndex(D));
-  l_to_first    := l_mults[l_e_box][2];
-  l_from_first  := l_mults[l_e_box][1];
-  l_transitions := List(LambdaOrbSCC(D), i -> e * l_to_first * l_mults[i][1]);
-  l_returns     := List(LambdaOrbSCC(D), i -> l_mults[i][2] * l_from_first * e);
-
-  ns   := Length(RepS);
-  RepG := Filtered(RepS, x -> x in DClass(S, e));;
-  ng   := Length(RepG);
-  M    := List([1 .. ng], x -> List([1 .. ns], x -> 0));
-
-  for a in [1 .. ng] do
-    g := RepG[a];
-    for b in [1 .. ns] do
-      s := RepS[b];
-      for ind in [1 .. Length(l_transitions)] do
-        l  := l_transitions[ind];
-        lp := l_returns[ind];
-        x := g * e * l * s;
-        if x in HClass(S, e * l) then
-          y := Inverse((l * s * lp)^map);
-          if ConjugacyClass(HH, g^map) = ConjugacyClass(HH, y) then
-            M[a][b] := M[a][b] + CentralizerOrder(HH, g^map);
-          fi;
-        fi;
-      od;
-    od;
-  od;
-
-  return M;
-end;
-
-ConcatenatedLClassBicharacters := function(S)
-  local idempotents, M, RepS, e;
-
-  M           := [];
-  RepS        := SConjugacyClassReps(S);
-  idempotents := TransversalIdempotents(S);
-
-  for e in idempotents do
-    M := Concatenation(M, LClassBicharacter(S, e, RepS));
-  od;
-
-  return M;
-end;
-
-
 ###############################################
 ###   Regular representation Bicharacter    ###
 ###############################################
 
-DClassBicharacter := function(S, D, ConjList)
-  local G, cardG, CG, cG,
-        d, H, L, R, cS, deg, l_transitions, nl, r_transitions, nr, M,
-        LRec, RRec, i, k, j, l, lp, g, pos, h, r, rp, Diag;
+# To compare, simple fixed point counting
+DClassBicharacterNaive := function(S, D, C)
+  local c, M, i, j;
+
+  c   := Length(C);
+  M   := List([1 .. c], x -> List([1 .. c], x -> 0));
+
+  for i in [1 .. c] do
+    for j in [1 .. c] do
+      M[i][j] := Number(D, x -> C[i] * x * C[j] = x);
+    od;
+  od;
+
+  return M;
+end;
+
+# To compare, simple fixed point counting
+RegularRepresentationBicharacterNaive := function(S)
+  local C, c, M, i, j;
+
+  C   := SConjugacyClassReps(S);
+  c   := Length(C);
+  M   := List([1 .. c], x -> List([1 .. c], x -> 0));
+
+  for i in [1 .. c] do
+    for j in [1 .. c] do
+      M[i][j] := Number(S, s -> C[i] * s * C[j] = s);
+    od;
+  od;
+
+  return M;
+end;
+
+DClassBicharacter := function(S, D, C)
+  local G, cardG, CG, cG, cS, d, 
+        l_mults, lp_mults, l, lp, r_mults, rp_mults, r, rp,
+        LRec, RRec, h, k, i, j, g, pos, Diag;
 
   G   := SchutzenbergerGroup(D);
   cardG := Size(G);
   CG  := ConjugacyClasses(G);
   cG  := Length(CG);
+  cS  := Length(C);
 
   d   := Representative(D);
-  H   := HClass(S, d);
-  L   := LClass(S, d);
-  R   := RClass(S, d);
-  cS  := Length(ConjList);
-  deg := DegreeOfTransformationSemigroup(S);
 
-  l_transitions := LTransitions(S, D, H);
-  nl            := Length(l_transitions) / 2;
-  r_transitions := RTransitions(S, D, H);
-  nr            := Length(r_transitions) / 2;
+  l_mults  := List(HClassReps(LClass(S, d)), h -> LeftGreensMultiplierNC(S, d, h));
+  lp_mults := List(HClassReps(LClass(S, d)), h -> LeftGreensMultiplierNC(S, h, d));
+  r_mults  := List(HClassReps(RClass(S, d)), h -> RightGreensMultiplierNC(S, d, h));
+  rp_mults := List(HClassReps(RClass(S, d)), h -> RightGreensMultiplierNC(S, h, d));
 
-  M   := List([1 .. cS], x -> List([1 .. cS], x -> 0));
-
-  LRec := List([1..cG], x -> List([1..cS], x -> 0));
-
-  for i in [1..cS] do
-    k  := ConjList[i];
-    for j in [1..nl] do
-      l  := l_transitions[2*j-1];
-      lp := l_transitions[2*j];
-      if d * l * k in LClass(S, d * l) then
-        g   := LambdaPerm(S)(d, d * l * k * lp);
-        pos := Position(CG, ConjugacyClass(G, g));
-        LRec[pos][i] := LRec[pos][i] + 1;
-      fi;
-    od;
-  od;
-
-  RRec := List([1..cS], x -> List([1..cG], x -> 0));
+  LRec := List([1..cS], x -> List([1..cG], x -> 0));
 
   for i in [1 .. cS] do
-    h := ConjList[i];
-    for j in [1..nr] do
-      r  := r_transitions[2*j-1];
-      rp := r_transitions[2*j];
-      if h * r * d in RClass(S, r * d) then # Implies k in kernel stabiliser
-        g     := Inverse(LambdaPerm(S)(d, rp * h * r * d));
-        pos   := Position(CG, ConjugacyClass(G, g));
-        RRec[i][pos] := RRec[i][pos] + 1;
+    h := C[i];
+    for j in [1..Length(l_mults)] do
+      l  := l_mults[j];
+      lp := lp_mults[j];
+      if h * l * d in RClass(S, l * d) then 
+        g := Inverse(LambdaPerm(S)(d, lp * h * l * d));
+        pos := Position(CG, ConjugacyClass(G, g));
+        LRec[i][pos] := LRec[i][pos] + 1;
       fi;
     od;
-
   od;
 
+  RRec := List([1..cG], x -> List([1..cS], x -> 0));
+
+  for i in [1..cS] do
+    k := C[i];
+    for j in [1..Length(r_mults)] do
+      r  := r_mults[j];
+      rp := rp_mults[j];
+      if d * r * k in LClass(S, d * r) then
+        g   := LambdaPerm(S)(d, d * r * k * rp);
+        pos := Position(CG, ConjugacyClass(G, g));
+        RRec[pos][i] := RRec[pos][i] + 1;
+      fi;
+    od;
+  od;
+ 
   Diag := DiagonalMat(List(CG, x -> cardG / Size(x)));
-  return RRec * Diag * LRec;
+  return LRec * Diag * RRec;
 end;
 
 ### Regular representation Bicharacter
-# DClass bicharacter iterated over all Dclasses of S.
+# DClassBicharacter iterated over all Dclasses of S.
 
-RegularRepresentationBiCharacter := function(S)
-  local C, D, DD, n, mat, i, j;
+RegularRepresentationBicharacter := function(S)
+  local C, D, c, mat, i, j;
 
   C := SConjugacyClassReps(S);
-  n := Length(C);
-  DD := DClasses(S);
-  mat := List([1 .. n], x -> List([1 .. n], x -> 0));
+  c := Length(C);
+  mat := List([1 .. c], x -> List([1 .. c], x -> 0));
 
-  for D in DD do
+  for D in DClasses(S) do
     mat := mat + DClassBicharacter(S, D, C);
   od;
 
   return mat;
 end;
 
+#############################
+###   L-class character   ###
+#############################
+
 # To compare, simple fixed point counting
-DClassBicharacterNaive := function(S, D, C)
-  local c, M, a, h, b, k, s;
+LClassBicharacterNaive := function(S, e, CS)
+  local cS, CG, cG, M, i, j;
 
-  c   := Length(C);
-  M   := List([1 .. c], x -> List([1 .. c], x -> 0));
+  cS := Length(CS);
+  CG := Filtered(CS, c -> c in HClass(S, e));
+  cG := Length(CG);
+  M := List([1 .. cS], x -> List([1 .. cG], x -> 0));
 
-  for a in [1 .. c] do
-    h := C[a];
-    for b in [1 .. c] do
-      k := C[b];
+  for i in [1 .. cS] do
+    for j in [1 .. cG] do
+      M[i][j] := Number(LClass(S, e), l -> CS[i] * l * CG[j] = l);
+    od;
+  od;
 
-      M[a][b] := Number(D, x -> h * x * k = x);
+  return TransposedMatMutable(M);
+end;
+
+# Assumes e is in CS
+LClassBicharacter := function(S, e, CS)
+  local H, map, HH, l_mults, lp_mults,
+        cS, CG, cG, M, CHH, CardCentralizer,
+        i, j, k, l, lp, y, c;
+
+  H   := HClass(S, e);
+  map := IsomorphismPermGroup(H);
+  HH  := Range(map);
+
+  l_mults := List(HClassReps(LClass(S, e)), h -> LeftGreensMultiplierNC(S, e, h) * e);
+  lp_mults     := List(HClassReps(LClass(S, e)), h -> e * LeftGreensMultiplierNC(S, h, e));
+
+  cS   := Length(CS);
+  CG   := Filtered(CS, x -> x in HClass(S, e));;
+  cG   := Length(CG);
+  M    := List([1 .. cG], x -> List([1 .. cS], x -> 0));
+
+  CHH      := ConjugacyClasses(HH);
+  CardCentralizer := List(CG, c -> CentralizerOrder(HH, c^map));
+
+  for j in [1 .. cS] do
+      for k in [1 .. Length(l_mults)] do
+        l  := l_mults[k];
+        lp := lp_mults[k];
+        if CS[j] * l * e in HClass(S, l * e) then
+          y := Inverse((lp * CS[j] * l * e)^map);
+          c := ConjugacyClass(HH, y);
+          i := Position(CHH, c);
+          M[i][j] := M[i][j] + CardCentralizer[i];
+        fi;
+      od;
+  od;
+
+  return M;
+end;
+
+ConcatenatedLClassBicharacters := function(S)
+  local M, C, e;
+
+  M := [];
+  C := SConjugacyClassReps(S);
+  for e in TransversalIdempotents(S) do
+    M := Concatenation(M, LClassBicharacter(S, e, C));
+  od;
+
+  return M;
+end;
+
+#############################
+###   R-class character   ###
+############################# 
+
+RClassBicharacterNaive := function(S, e, CS)
+  local cS, CG, cG, M, i, j;
+
+  cS := Length(CS);
+  CG := Filtered(CS, c -> c in HClass(S, e));
+  cG := Length(CG);
+  M := List([1 .. cG], x -> List([1 .. cS], x -> 0));
+
+  for i in [1 .. cG] do
+    for j in [1 .. cS] do
+      M[i][j] := Number(RClass(S, e), r -> CG[i] * r * CS[j] = r);
     od;
   od;
 
   return M;
 end;
 
-RegularRepresentationBiCharacterNaive := function(S)
-  local C, n, mat, D, DD;
+RClassBicharacter := function(S, e, CS)
+  local H, map, HH, r_mults, rp_mults,
+        cS, CG, cG, M, CHH, CardCentralizer,
+        i, j, k, r, rp, y, c;
 
-  C   := SConjugacyClassReps(S);
-  n   := Length(C);
-  mat := List([1 .. n], x -> List([1 .. n], x -> 0));
-  DD  := DClasses(S);
+  H   := HClass(S, e);
+  map := IsomorphismPermGroup(H);
+  HH  := Range(map);
 
-  for D in DD do
-    mat := mat + DClassBicharacterNaive(S, D, C);
+  r_mults := List(HClassReps(RClass(S, e)), h -> RightGreensMultiplierNC(S, e, h));
+  rp_mults     := List(HClassReps(RClass(S, e)), h -> RightGreensMultiplierNC(S, h, e));
+
+  cS   := Length(CS);
+  CG   := Filtered(CS, x -> x in HClass(S, e));;
+  cG   := Length(CG);
+  M    := List([1 .. cG], x -> List([1 .. cS], x -> 0));
+
+  CHH      := ConjugacyClasses(HH);
+  CardCentralizer := List(CG, c -> CentralizerOrder(HH, c^map));
+
+  for j in [1 .. cS] do
+      for k in [1 .. Length(r_mults)] do
+        r  := r_mults[k];
+        rp := rp_mults[k];
+        if e * r * CS[j] in HClass(S, e * r) then
+          y := Inverse((e * r * CS[j] * rp)^map);
+          c := ConjugacyClass(HH, y);
+          i := Position(CHH, c);
+          M[i][j] := M[i][j] + CardCentralizer[i];
+        fi;
+      od;
   od;
 
-  return mat;
+  return M;
 end;
+
+ConcatenatedRClassBicharacters := function(S)
+  local M, C, e;
+
+  M := [];
+  C := SConjugacyClassReps(S);
+  for e in TransversalIdempotents(S) do
+    M := Concatenation(M, RClassBicharacter(S, e, C));
+  od;
+
+  return M;
+end;
+
+
+

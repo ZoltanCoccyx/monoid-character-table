@@ -8,7 +8,8 @@ MonoidCartanMatrix := function(S)
   local C, M;
 
   C := MonoidCharacterTable(S);
-  M := RegularRepresentationBiCharacter(S);
+  M := RegularRepresentationBicharacter(S);
 
   return Inverse(TransposedMatMutable(C)) * M * Inverse(C);
 end;
+

@@ -1,80 +1,73 @@
 Read("fixed_points.g");
 
 ####################################################
-###   Computing a basis of the L-class radical   ###
+###   Computing a basis of the R-class radical   ###
 ####################################################
 
-LClassRadical := function(S, e)
-   local D, H, ord, map, HH, LHH, deg, invmap,
-         l_transitions, nl, r_transitions, nr,
-         l_ref_to_goal, l_goal_to_ref, r_ref_to_goal,
-         M, Rad, c, j, r, k, i, l, x;
+RClassRadical := function(S, e)
+  local D, H, ord, map, HH, LHH, invmap, 
+        l_mults, r_mults, rp_mults, nl, nr,
+        M, Rad, c, j, r, k, i, l, x;
 
-   D   := DClass(S, e);
-   H   := HClass(S, e);
-   ord := Number(H);
-   map := IsomorphismPermGroup(H);
-   HH  := Range(map);
-   LHH := List(HH);
-   deg := DegreeOfTransformationSemigroup(S);
-   invmap := InverseGeneralMapping(map);
+  D   := DClass(S, e);
+  H   := HClass(S, e);
+  ord := Size(H);
+  map := IsomorphismPermGroup(H);
+  HH  := Range(map);
+  LHH := List(HH);
+  invmap := InverseGeneralMapping(map);
 
-   l_transitions := LTransitions(S, D, H);
-   nl            := Length(l_transitions) / 2;
-   l_ref_to_goal := List([1..nl], i -> e * l_transitions[2*i-1]);
-   l_goal_to_ref := List([1..nl], i -> l_transitions[2*i] * e);
+  l_mults  := List(HClassReps(LClass(S, e)), h -> LeftGreensMultiplierNC(S, e, h) * e);
+  r_mults  := List(HClassReps(RClass(S, e)), h -> e * RightGreensMultiplierNC(S, e, h));
+  rp_mults := List(HClassReps(RClass(S, e)), h -> RightGreensMultiplierNC(S, h, e) * e);
+  nl := Length(l_mults);
+  nr := Length(r_mults);
 
-   r_transitions := RTransitions(S, D, H);
-   nr := Length(r_transitions) / 2;
-   r_ref_to_goal := List([1..nr], i -> r_transitions[2*i-1] * e);
+  M := List([1 .. ord * nl], x -> List([1 .. ord * nr], x -> 0));
 
-   M := List([1 .. ord * nr], x -> List([1 .. ord * nl], x -> 0));
+  c := 0;
+  for k in H do
+    for i in [1 .. nl] do
+      l := l_mults[i];
+      for j in [1 .. nr] do
+        r  := r_mults[j];
+        if (r * l) in H then
+          x := (k ^ map) * ((r * l) ^ map) ^ (-1);
+          M[i + nl * c][(j - 1) * ord + Position(LHH, x)] := 1;
+        fi;
+      od;
+    od;
+    c := c + 1;
+  od;
+  
+  Rad := NullspaceMat(TransposedMatMutable(M));
 
-   c := 0;
-   for k in H do
-     for i in [1 .. nr] do
-       r := r_ref_to_goal[i];
-       for j in [1 .. nl] do
-         l  := l_ref_to_goal[j];
-         if (l * r) in H then
-           x := (k ^ map) * ((l * r) ^ map) ^ (-1);
-           M[i + nr * c][(j - 1) * ord + Position(LHH, x)] := 1;
-         fi;
-       od;
-     od;
-     c := c + 1;
-   od;
-
-   Rad := NullspaceMat(TransposedMatMutable(M));
-   l_ref_to_goal := List([1..nl], i -> e * l_transitions[2*i-1]);
-   l_goal_to_ref := List([1..nl], i -> l_transitions[2*i] * e);
-
-   return rec( rad := Rad, 
-   	       transitions := l_ref_to_goal,
-               returns := l_goal_to_ref, 
-               HList := LHH, 
-               morph := map);
+  return rec( rad := Rad, 
+          transitions := r_mults,
+              returns := rp_mults, 
+              HList := LHH, 
+              morph := map);
 end;
 
 ############################################################
-###   Computing the bicharacter of the L-class radical   ###
+###   Computing the bicharacter of the R-class radical   ###
 ############################################################
 
-LClassRadicalBicharacter := function(S, e)
-  local Rec, Rad, LHH, map, l_transitions, l_returns,
+RClassRadicalBicharacter := function(S, e)
+  local Rec, Rad, LHH, map, r_mults, rp_mults,
         ListLClass, n, H, ord, B, dim,
-        RepS, ns, RepG, ng, mat,
+        CS, cS, CG, cG, mat, compt,
         h, k, chi, ind_r, r, row, i, coeff,
         ind_transition, ind_groupe, x, lp, g, ind_l_class;
 
-  Rec := LClassRadical(S, e);
+  Rec := RClassRadical(S, e);
   Rad := Rec.rad;
   LHH := Rec.HList;
   map := Rec.morph;
-  l_transitions := Rec.transitions;
-  l_returns     := Rec.returns;
+  r_mults  := Rec.transitions;
+  rp_mults := Rec.returns;
   
-  ListLClass    := List(l_transitions, l -> LClass(S, e * l)); 
+  ListLClass := List(r_mults, r -> LClass(S, e * r)); 
   
   if Length(Rad) = 0 then
     Rad := [[0]];
@@ -85,32 +78,35 @@ LClassRadicalBicharacter := function(S, e)
   B    := Basis(VectorSpace(Rationals, Rad));
   dim  := Length(B);
 
-  RepS := SConjugacyClassReps(S);
-  ns   := Length(RepS);
-  RepG := DConjugacyClassReps(S, DClass(S, e));
-  ng   := Length(RepG);
+  CS   := SConjugacyClassReps(S);
+  cS   := Length(CS);
+  CG   := Filtered(CS, x -> x in HClass(S, e));;
+  cG   := Length(CG);
 
-  mat  := List([1 .. ng], x -> List([1 .. ns], x -> 0));
+  mat  := List([1 .. cG], x -> List([1 .. cS], x -> 0));
 
-  for h in RepS do
-    for k in RepG do
+  for h in CS do
+    for k in CG do
       chi := 0;
 
       # Computing the contribution to the trace of each basis vector
       for ind_r in [1 .. dim] do
         r   := B[ind_r];
         row := List([1 .. n], x-> 0);
-
+        compt := 0;
         # Computing the image of the vector
         for i in [1 .. n] do
           coeff := r[i];
-          # Les listes commencent à 1 bleurk
+          if coeff = 0 then continue; fi;
+          #Print(r, "\n");
           ind_transition := QuoInt(i - 1, ord) + 1;
           ind_groupe := RemInt(i - 1, ord) + 1;
-          x := k * LHH[ind_groupe] * l_transitions[ind_transition] * h;
+          x := k * LHH[ind_groupe] * r_mults[ind_transition] * h;
           ind_transition := Position(ListLClass, LClass(S, x));
           if not ind_transition = fail then
-            lp := l_returns[ind_transition];
+            compt := compt + 1;
+            #Print("-----------Here------------", ind_transition, " ", coeff , "\n\n");
+            lp := rp_mults[ind_transition];
             #Print(e, x, lp, e*x*lp, Representative(H), "\n\n");
             g  := (e * x * lp) ^ map;
             ind_groupe  := Position(LHH, g);
@@ -120,20 +116,20 @@ LClassRadicalBicharacter := function(S, e)
         od;
         chi := chi + Coefficients(B, row)[ind_r];
       od;
-      mat[Position(RepG, k)][Position(RepS, h)] := chi;
+      mat[Position(CG, k)][Position(CS, h)] := chi;
     od;
   od;
 
   return mat;
 end;
 
-ConcatenatedLClassRadicalBicharacters := function(S)
+ConcatenatedRClassRadicalBicharacters := function(S)
   local idempotents, e, M;
 
   idempotents := TransversalIdempotents(S);
   M           := [];
   for e in idempotents do
-    M := Concatenation(M, LClassRadicalBicharacter(S, e));
+    M := Concatenation(M, RClassRadicalBicharacter(S, e));
   od;
 
   return M;
@@ -146,11 +142,11 @@ end;
 ###   Group Character Tables
 
 DiagonalOfCharacterTables := function(S)
-  local C, n, M, idempotents, maps, map, XG, CG, h, k,
+  local CS, n, M, idempotents, maps, map, XG, CG, h, k,
   	b, e, G, I, l, i, j;
 
-  C := SConjugacyClassReps(S);
-  n := Length(C);
+  CS := SConjugacyClassReps(S);
+  n := Length(CS);
   M := List([1..n], x -> List([1..n], x -> 0));
   idempotents := TransversalIdempotents(S);
 
@@ -165,9 +161,9 @@ DiagonalOfCharacterTables := function(S)
     CG := ConjugacyClasses(XG);
     l  := Length(I);
     for i in [1..l] do
-      h := ConjugacyClass(G, C[i+b] ^ map);
+      h := ConjugacyClass(G, CS[i+b] ^ map);
       for j in [1..l] do
-        k := ConjugacyClass(G, C[j+b] ^ map);
+        k := ConjugacyClass(G, CS[j+b] ^ map);
         M[i+b][j+b] := I[Position(CG, h)][Position(CG, k)];
       od;
     od;
@@ -182,9 +178,10 @@ end;
 MonoidCharacterTable := function(S)
   local L, R, D;
 
-  L := ConcatenatedLClassBicharacters(S);
-  R := ConcatenatedLClassRadicalBicharacters(S);
+  L := ConcatenatedRClassBicharacters(S);
+  R := ConcatenatedRClassRadicalBicharacters(S);
   D := DiagonalOfCharacterTables(S);
 
   return Inverse(TransposedMatMutable(D)) * (L - R);
 end;
+
