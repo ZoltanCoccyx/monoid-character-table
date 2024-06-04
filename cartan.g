@@ -4,6 +4,8 @@ Read("character.g");
 ###   Monoid Cartan matrix   ###
 ################################
 
+
+
 MonoidCartanMatrix := function(S)
   local C, M;
 
