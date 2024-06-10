@@ -19,5 +19,5 @@ As of this commit, works on transformation, bipartition and partial permutation 
   - [ ] Change the Cartan and character table function to return labels of their rows and columns
   - [ ] Automate performance testing 
   - [ ] Add documentation
-  - [ ] Add test using the naive sanity chack functions
+  - [ ] Add test using the naive sanity check functions
   - [ ] Add examples
