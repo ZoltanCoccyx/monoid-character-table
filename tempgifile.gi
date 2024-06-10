@@ -17,7 +17,7 @@ end);
 InstallMethod(GeneralisedConjugacyClassesRepresentatives, "for a semigroup",
 [IsSemigroup],
 function(S)
-  local D, out, C, map;
+  local D, out, C, map, invmap;
 
   D := List(RegularDClasses(S), GroupHClass);
   D := List(D, IsomorphismPermGroup);
@@ -27,8 +27,8 @@ function(S)
     # Ugly fix: ensures that the conjugacy classes are computed 
     # in the same order each time. Also ensures the conjugacy classes of the 
     # group and the charater table are in the same order.
-    map := InverseGeneralMapping(map);
-    C := List(C, x -> x ^ map);
+    invmap := InverseGeneralMapping(map);
+    C := List(C, x -> x ^ invmap);
     Append(out, C);
   od;
 
