@@ -23,7 +23,7 @@ function(S)
   D := List(D, IsomorphismPermGroup);
   out := [];
   for map in D do
-    C := List(ConjugacyClasses(CharacterTable(Range(map))), Representative);
+    C := List(ConjugacyClasses(OrdinaryCharacterTable(Range(map))), Representative);
     # Ugly fix: ensures that the conjugacy classes are computed 
     # in the same order each time. Also ensures the conjugacy classes of the 
     # group and the charater table are in the same order.
@@ -111,4 +111,266 @@ function(S)
   SetRegularRepresentationBicharacter(S, mat);
 
   return mat;
+end);
+
+InstallMethod(RClassBicharacterOfGroupHClass, "for group H class",
+[IsGroupHClass],
+function(H)
+  local S, e, CS, map, invmap, HH, r_mults, rp_mults,
+        cS, CG, cG, M, CHH, CardCentralizer,
+        i, j, k, r, rp, y, c;
+
+  S   := ParentAttr(H);
+  CS  := GeneralisedConjugacyClassesRepresentatives(S);
+  e   := MultiplicativeNeutralElement(H);
+  map := IsomorphismPermGroup(H);
+  HH  := Range(map);
+
+  r_mults := List(HClassReps(RClassOfHClass(H)), h -> RightGreensMultiplierNC(S, e, h));
+  rp_mults     := List(HClassReps(RClassOfHClass(H)), h -> RightGreensMultiplierNC(S, h, e));
+
+  cS   := Length(CS);
+  CHH  := ConjugacyClasses(OrdinaryCharacterTable(HH));
+
+  invmap := InverseGeneralMapping(map);
+
+  CG   := List(List(CHH, Representative) , x -> x ^ invmap);
+  cG   := Length(CG);
+  M    := List([1 .. cG], x -> List([1 .. cS], x -> 0));
+
+  CardCentralizer := List(CG, c -> CentralizerOrder(HH, c^map));
+
+  for j in [1 .. cS] do
+      for k in [1 .. Length(r_mults)] do
+        r  := r_mults[k];
+        rp := rp_mults[k];
+        if e * r * CS[j] in HClass(S, e * r) then
+          y := Inverse((e * r * CS[j] * rp)^map);
+          c := ConjugacyClass(HH, y);
+          i := Position(CHH, c);
+          M[i][j] := M[i][j] + CardCentralizer[i];
+        fi;
+      od;
+  od;
+
+  SetRClassBicharacterOfGroupHClass(H,M);
+
+  return M;
+end);
+
+
+# Could be renamed to the natural map.
+
+InstallMethod(RClassRadicalOfGroupHClass,  "for group H class",
+[IsGroupHClass],
+function(H)
+  local S, e, D, ord, map, HH, LHH, invmap, 
+        l_mults, r_mults, rp_mults, nl, nr,
+        M, Rad, c, j, r, k, i, l, x, out;
+
+  S   := ParentAttr(H);
+  e   := MultiplicativeNeutralElement(H);
+  D   := DClassOfHClass(H);
+  ord := Size(H);
+  map := IsomorphismPermGroup(H);
+  HH  := Range(map);
+  LHH := List(HH);
+  invmap := InverseGeneralMapping(map);
+
+  l_mults  := List(HClassReps(LClassOfHClass(H)), h -> LeftGreensMultiplierNC(S, e, h) * e);
+  r_mults  := List(HClassReps(RClassOfHClass(H)), h -> e * RightGreensMultiplierNC(S, e, h));
+  rp_mults := List(HClassReps(RClassOfHClass(H)), h -> RightGreensMultiplierNC(S, h, e) * e);
+  nl := Length(l_mults);
+  nr := Length(r_mults);
+
+  M := List([1 .. ord * nl], x -> List([1 .. ord * nr], x -> 0));
+
+  c := 0;
+  for k in H do
+    for i in [1 .. nl] do
+      l := l_mults[i];
+      for j in [1 .. nr] do
+        r  := r_mults[j];
+        if (r * l) in H then
+          x := (k ^ map) * ((r * l) ^ map) ^ (-1);
+          M[i + nl * c][(j - 1) * ord + Position(LHH, x)] := 1;
+        fi;
+      od;
+    od;
+    c := c + 1;
+  od;
+  
+  Rad := NullspaceMat(TransposedMatMutable(M));
+
+  out := rec( rad := Rad, 
+          transitions := r_mults,
+              returns := rp_mults, 
+              HList := LHH);
+
+  SetRClassRadicalOfGroupHClass(H, out);
+
+  return out;
+end);
+
+InstallMethod(RClassRadicalBicharacterOfGroupHClass,  "for group H class",
+[IsGroupHClass],
+function(H)
+  local S, e, Rec, Rad, LHH, map, invmap, r_mults, rp_mults,
+        ListLClass, n, HH, CHH, ord, B, dim,
+        CS, cS, CG, cG, mat, compt,
+        h, k, chi, ind_r, r, row, i, coeff,
+        ind_transition, ind_groupe, x, lp, g, ind_l_class;
+
+  S   := ParentAttr(H);
+  e   := MultiplicativeNeutralElement(H);
+
+  CS   := GeneralisedConjugacyClassesRepresentatives(S);
+  cS   := Length(CS);
+
+  map := IsomorphismPermGroup(H);
+  invmap := InverseGeneralMapping(map);
+
+  HH  := Range(map);
+  CHH  := ConjugacyClasses(OrdinaryCharacterTable(HH));
+
+  CG   := List(List(CHH, Representative) , x -> x ^ invmap);
+  cG   := Length(CG);
+
+  Rec := RClassRadicalOfGroupHClass(H);
+  Rad := Rec.rad;
+  LHH := Rec.HList;
+  r_mults  := Rec.transitions;
+  rp_mults := Rec.returns;
+  
+  ListLClass := List(r_mults, r -> LClass(S, e * r)); 
+  
+  if Length(Rad) = 0 then
+    Rad := [[0]];
+  fi;
+  n    := Length(Rad[1]);
+  ord  := Length(LHH);
+  B    := Basis(VectorSpace(Rationals, Rad));
+  dim  := Length(B);
+
+  mat  := List([1 .. cG], x -> List([1 .. cS], x -> 0));
+
+  for h in CS do
+    for k in CG do
+      chi := 0;
+
+      # Computing the contribution to the trace of each basis vector
+      for ind_r in [1 .. dim] do
+        r   := B[ind_r];
+        row := List([1 .. n], x-> 0);
+        compt := 0;
+        # Computing the image of the vector
+        for i in [1 .. n] do
+          coeff := r[i];
+          if coeff = 0 then continue; fi;
+          #Print(r, "\n");
+          ind_transition := QuoInt(i - 1, ord) + 1;
+          ind_groupe := RemInt(i - 1, ord) + 1;
+          x := k * LHH[ind_groupe] * r_mults[ind_transition] * h;
+          ind_transition := Position(ListLClass, LClass(S, x));
+          if not ind_transition = fail then
+            compt := compt + 1;
+            #Print("-----------Here------------", ind_transition, " ", coeff , "\n\n");
+            lp := rp_mults[ind_transition];
+            #Print(e, x, lp, e*x*lp, Representative(H), "\n\n");
+            g  := (e * x * lp) ^ map;
+            ind_groupe  := Position(LHH, g);
+            ind_l_class := (ind_transition - 1) * ord + ind_groupe;
+            row[ind_l_class] := row[ind_l_class] + coeff;
+          fi;
+        od;
+        chi := chi + Coefficients(B, row)[ind_r];
+      od;
+      mat[Position(CG, k)][Position(CS, h)] := chi;
+    od;
+  od;
+
+  SetRClassRadicalBicharacterOfGroupHClass(H,mat);
+
+  return mat;
+end);
+
+
+
+
+
+
+
+
+
+InstallMethod(DiagonalOfCharacterTables,  "for a semigroup",
+[IsSemigroup],
+function(S)
+  local CS, n, M, idempotents, transversalHclasses, maps, map, XG, CG, h, k,
+  	b, e, G, I, l, i, j;
+
+  CS := GeneralisedConjugacyClassesRepresentatives(S);
+  n := Length(CS);
+  M := List([1..n], x -> List([1..n], x -> 0));
+  idempotents := TransversalIdempotents(S);
+
+  transversalHclasses := List(RegularDClasses(S), GroupHClass);
+  maps := List(transversalHclasses, IsomorphismPermGroup);
+
+  b := 0;
+  for map in maps do
+    G := Range(map);
+    XG := CharacterTable(G);
+    I  := Irr(XG);
+    CG := ConjugacyClasses(XG);
+    l  := Length(I);
+    for i in [1..l] do
+      h := ConjugacyClass(G, CS[i+b] ^ map);
+      for j in [1..l] do
+        k := ConjugacyClass(G, CS[j+b] ^ map);
+        M[i+b][j+b] := I[Position(CG, h)][Position(CG, k)];
+      od;
+    od;
+    b := b + l;
+  od;
+
+  SetDiagonalOfCharacterTables(S,M);
+
+  return M;
+end);
+
+###   Monoid Character Table
+
+InstallMethod(MonoidCharacterTable,  "for a semigroup",
+[IsSemigroup],
+function(S)
+  local R, Rrad, D, transversalHclasses, out;
+
+  D := DiagonalOfCharacterTables(S);
+
+  transversalHclasses := List(RegularDClasses(S), GroupHClass);
+
+
+  R := Concatenation(List(transversalHclasses, RClassBicharacterOfGroupHClass));
+  Rrad := Concatenation(List(transversalHclasses, RClassRadicalBicharacterOfGroupHClass));
+
+  out := Inverse(TransposedMatMutable(D)) * (R - Rrad);
+
+  SetMonoidCharacterTable(S,out);
+
+  return out;
+end);
+
+InstallMethod(MonoidCartanMatrix,  "for a semigroup",
+[IsSemigroup],
+function(S)
+  local C, M, out;
+
+  C := MonoidCharacterTable(S);
+  M := RegularRepresentationBicharacter(S);
+
+  out := Inverse(TransposedMatMutable(C)) * M * Inverse(C);
+
+  SetMonoidCartanMatrix(S,out);
+
+  return out;
 end);
