@@ -18,3 +18,4 @@ DeclareAttribute("DiagonalOfCharacterTables",IsSemigroup);
 DeclareAttribute("MonoidCharacterTable",IsSemigroup);
 
 DeclareAttribute("MonoidCartanMatrix",IsSemigroup);
+
