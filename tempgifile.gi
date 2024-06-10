@@ -2,6 +2,41 @@
 ###   Character-equivalence representatives    ###
 ##################################################
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 InstallMethod(TransversalIdempotents, "for a semigroup",
 [IsSemigroup],
 function(S)
@@ -13,6 +48,38 @@ function(S)
 
   return out;
 end);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 InstallMethod(GeneralisedConjugacyClassesRepresentatives, "for a semigroup",
 [IsSemigroup],
@@ -36,6 +103,45 @@ function(S)
 
   return out;
 end);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 InstallMethod(DClassBicharacter, "for a D class",
 [IsGreensDClass],
@@ -95,6 +201,38 @@ function(D)
   return LRec * Diag * RRec;
 end);
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 InstallMethod(RegularRepresentationBicharacter, "for a semigroup",
 [IsSemigroup],
 function(S)
@@ -112,6 +250,40 @@ function(S)
 
   return mat;
 end);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 InstallMethod(RClassBicharacterOfGroupHClass, "for group H class",
 [IsGroupHClass],
@@ -157,6 +329,28 @@ function(H)
 
   return M;
 end);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 # Could be renamed to the natural map.
@@ -211,6 +405,21 @@ function(H)
 
   return out;
 end);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 InstallMethod(RClassRadicalBicharacterOfGroupHClass,  "for group H class",
 [IsGroupHClass],
@@ -302,6 +511,27 @@ end);
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 InstallMethod(DiagonalOfCharacterTables,  "for a semigroup",
 [IsSemigroup],
 function(S)
@@ -338,7 +568,47 @@ function(S)
   return M;
 end);
 
-###   Monoid Character Table
+
+
+
+
+
+
+
+
+#############################################################################
+##
+#A  MonoidCharacterTable( <M> )
+##
+##  <#GAPDoc Label="MonoidCharacterTable">
+##  <ManSection>
+##  <Attr Name="MonoidCharacterTable" Arg='M'/>
+##
+##  <Description>
+##  Called with a finite monoid <A>M</A>,
+##  <Ref Attr="MonoidCharacterTable"/> returns the character table of the monoid 
+##  that is, the matrix dim Hom(P,Q)/dim End(P / rad(FM)), where P
+##  and Q run over the left indecomposable projective modules of FM.
+##  <P/>
+##  If <A>M</A> is the only argument then
+##  <Ref Attr="MonoidCartanMatrix"/> returns the Cartan matrix of the monoid 
+##  algebra FM, where F is a splitting field of M over the rationals.
+##  <P/>
+##  At the moment, methods are available for the following cases:
+##  if <A>F</A> is not given (i.e. it defaults to the splitting field) and 
+##  <A>G</A> is a finite monoid,
+##  the method of _____________ is used.
+##  <P/>
+##  Otherwise, if <A>F</A> and <A>M</A> are both finite,
+##  MeatAxe methods are used which can make
+##  this an expensive operation.
+##  <P/>
+##  For other cases no methods are implemented yet.
+##  <P/>
+##  </Description>
+##  </ManSection>
+##  <#/GAPDoc>
+##
 
 InstallMethod(MonoidCharacterTable,  "for a semigroup",
 [IsSemigroup],
@@ -359,6 +629,7 @@ function(S)
 
   return out;
 end);
+
 
 #############################################################################
 ##
