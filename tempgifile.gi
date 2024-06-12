@@ -72,6 +72,41 @@ end);
 
 
 
+BindGlobal("GeneralisedConjugacyClassType",
+NewType(NewFamily("GeneralisedConjugacyClassFamily"),
+        IsGeneralisedConjugacyClass and
+        IsAttributeStoringRep));
+
+InstallMethod(GeneralisedConjugacyClass, " ",
+[IsSemigroup, IsObject],
+function(S,s)
+  local result;
+
+  result := Objectify(GeneralisedConjugacyClassType, rec());
+  SetRepresentative(result, s);
+  SetParentAttr(result, S);
+
+  return result;
+end);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -124,6 +159,113 @@ end);
 
 
 
+InstallMethod(GeneralisedConjugacyClasses, " ",
+[IsSemigroup],
+function(S)
+  local result;
+
+  result := List(GeneralisedConjugacyClassesRepresentatives(S),
+                 x -> GeneralisedConjugacyClass(S,x));
+
+  SetGeneralisedConjugacyClasses(S, result);
+
+  return result;
+end);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+BindGlobal("MonoidCharacterTableType",
+NewType(NewFamily("MonoidCharacterTableFamily"),
+        IsMonoidCharacterTable and
+        IsAttributeStoringRep));
+
+InstallMethod(MonoidCharacterTable,  "for a semigroup",
+[IsSemigroup],
+function(S)
+  local result;
+
+  result := Objectify(MonoidCharacterTableType, rec());
+  SetParentAttr(result, S);
+  SetMonoidCharacterTable(S, result);
+
+  return result;
+end);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+BindGlobal("MonoidCharacterType",
+NewType(NewFamily("MonoidCharacterFamily"),
+        IsMonoidCharacter and
+        IsAttributeStoringRep));
+
+InstallMethod(MonoidCharacter,  " ",
+[IsMonoidCharacterTable, IsDenseList],
+function(ct,values)
+  local result;
+
+  result := Objectify(MonoidCharacterType, rec());
+  SetParentAttr(result, ct);
+  SetValuesOfMonoidClassFunction(result, values);
+
+  return result;
+end);
 
 
 
@@ -576,6 +718,22 @@ end);
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #############################################################################
 ##
 #A  MonoidCharacterTable( <M> )
@@ -610,25 +768,40 @@ end);
 ##  <#/GAPDoc>
 ##
 
-InstallMethod(MonoidCharacterTable,  "for a semigroup",
-[IsSemigroup],
-function(S)
-  local R, Rrad, D, transversalHclasses, out;
+InstallMethod(Irr,  "for a semigroup",
+[IsMonoidCharacterTable],
+function(ct)
+  local R, Rrad, D, transversalHclasses, out, irrvalues;
 
-  D := DiagonalOfCharacterTables(S);
+  D := DiagonalOfCharacterTables(ParentAttr(ct));
 
-  transversalHclasses := List(RegularDClasses(S), GroupHClass);
+  transversalHclasses := List(RegularDClasses(ParentAttr(ct)), GroupHClass);
 
 
   R := Concatenation(List(transversalHclasses, RClassBicharacterOfGroupHClass));
   Rrad := Concatenation(List(transversalHclasses, RClassRadicalBicharacterOfGroupHClass));
 
-  out := Inverse(TransposedMatMutable(D)) * (R - Rrad);
+  irrvalues := Inverse(TransposedMatMutable(D)) * (R - Rrad);
 
-  SetMonoidCharacterTable(S,out);
+  out := List(irrvalues, x -> MonoidCharacter(ct,x));
+
+  SetIrr(ct,out);
 
   return out;
 end);
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 #############################################################################
@@ -670,7 +843,8 @@ InstallMethod(MonoidCartanMatrix,  "for a semigroup",
 function(S)
   local C, M, out;
 
-  C := MonoidCharacterTable(S);
+  C := List(Irr(MonoidCharacterTable(S)),ValuesOfMonoidClassFunction);
+
   M := RegularRepresentationBicharacter(S);
 
   out := Inverse(TransposedMatMutable(C)) * M * Inverse(C);
