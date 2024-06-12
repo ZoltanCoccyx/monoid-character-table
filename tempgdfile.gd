@@ -1,7 +1,58 @@
 
 DeclareAttribute("TransversalIdempotents", IsSemigroup);
 
+
+
+DeclareCategory("IsGeneralisedConjugacyClass", IsObject);
+
+DeclareAttribute("Representative",IsGeneralisedConjugacyClass);
+
+DeclareAttribute("ParentAttr",IsGeneralisedConjugacyClass);
+
+DeclareOperation("GeneralisedConjugacyClass", [IsSemigroup, IsObject]);
+
+
+
+
+
 DeclareAttribute("GeneralisedConjugacyClassesRepresentatives", IsSemigroup);
+
+DeclareAttribute("GeneralisedConjugacyClasses", IsSemigroup);
+
+
+
+
+
+DeclareCategory("IsMonoidCharacterTable", IsObject);
+
+DeclareAttribute("ParentAttr",IsMonoidCharacterTable);
+
+
+
+
+
+
+DeclareAttribute("MonoidCharacterTable",IsSemigroup);
+
+
+
+
+
+
+
+DeclareCategory("IsMonoidCharacter", IsObject);
+
+DeclareOperation("MonoidCharacter",[IsMonoidCharacterTable, IsList]);
+
+DeclareAttribute("ParentAttr",IsMonoidCharacter);
+
+DeclareAttribute("ValuesOfMonoidClassFunction",IsMonoidCharacterTable);
+
+
+
+
+
+
 
 DeclareAttribute("DClassBicharacter", IsGreensDClass);
 
@@ -15,7 +66,17 @@ DeclareAttribute("RClassRadicalBicharacterOfGroupHClass", IsGroupHClass);
 
 DeclareAttribute("DiagonalOfCharacterTables",IsSemigroup);
 
-DeclareAttribute("MonoidCharacterTable",IsSemigroup);
+
+
+
+
+
+DeclareAttribute("Irr",IsMonoidCharacterTable);
+
+
+
+
+
 
 DeclareAttribute("MonoidCartanMatrix",IsSemigroup);
 
