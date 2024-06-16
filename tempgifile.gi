@@ -848,37 +848,40 @@ end);
 
 
 
-# InstallMethod(MonoidCharacter,  " ",
-# [IsMonoidCharacterTable, IsDenseList],
-# function(ct,values)
-#   local result;
+InstallMethod(PimMonoidCharacter,  " ",
+[IsMonoidCharacterTable, IsDenseList, IsMonoidCharacter],
+function(ct,values,char)
+  local result;
 
-#   result := Objectify(MonoidCharacterType, rec());
-#   SetParentAttr(result, ct);
-#   SetValuesOfMonoidClassFunction(result, values);
+  result := Objectify(MonoidCharacterType, rec());
+  SetParentAttr(result, ct);
+  SetValuesOfCompositionFactorsFunction(result, values);
+  SetProjectiveCoverOf(result,char);
 
-#   return result;
-# end);
-
-
-
-# InstallMethod(Pims,  "for a semigroup",
-# [IsMonoidCharacterTable],
-# function(ct)
-#   local C, S, M, out;
-
-#   S := ParentAttr(ct);
-
-#   C := List(Irr(ct),ValuesOfMonoidClassFunction);
-
-#   M := RegularRepresentationBicharacter(S);
-
-#   out := Inverse(TransposedMatMutable(C)) * M * Inverse(C);
+  return result;
+end);
 
 
 
-#   return out;
-# end);
+InstallMethod(Pims,  "for a semigroup",
+[IsMonoidCharacterTable],
+function(ct)
+  local C, S, M, out, pims;
+
+  S := ParentAttr(ct);
+
+  C := List(Irr(ct),ValuesOfMonoidClassFunction);
+
+  M := RegularRepresentationBicharacter(S);
+
+  out := Inverse(TransposedMatMutable(C)) * M * Inverse(C);
+
+  pims := List([1..Length(out)], n -> PimMonoidCharacter(ct, out[n], Irr(ct)[n]));
+
+  SetPims(ct,pims);
+
+  return pims;
+end);
 
 
 
@@ -886,15 +889,11 @@ end);
 InstallMethod(MonoidCartanMatrix,  "for a semigroup",
 [IsSemigroup],
 function(S)
-  local C, M, out;
+  local out;
 
-  C := List(Irr(MonoidCharacterTable(S)),ValuesOfMonoidClassFunction);
+  out := List(Pims(MonoidCharacterTable(S)),ValueOfCompositionFactorsFunction);
 
-  M := RegularRepresentationBicharacter(S);
-
-  out := Inverse(TransposedMatMutable(C)) * M * Inverse(C);
-
-  SetMonoidCartanMatrix(S,out);
+  # SetMonoidCartanMatrix(S,out);
 
   return out;
 end);
