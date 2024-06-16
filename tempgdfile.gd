@@ -44,13 +44,15 @@ DeclareCategory("IsMonoidCharacter", IsObject);
 
 DeclareOperation("MonoidCharacter",[IsMonoidCharacterTable, IsList]);
 
+DeclareOperation("PimMonoidCharacter",[IsMonoidCharacterTable, IsDenseList, IsMonoidCharacter]);
+
 DeclareAttribute("ParentAttr",IsMonoidCharacter);
 
 DeclareAttribute("ValuesOfMonoidClassFunction",IsMonoidCharacterTable);
 
-# DeclareAttribute("ProjectiveCoverOf",IsMonoidCharacter);
+DeclareAttribute("ProjectiveCoverOf",IsMonoidCharacter);
 
-# DeclareAttribute("ValueOfCompositionFactorsFunction",IsMonoidCharacter);
+DeclareAttribute("ValuesOfCompositionFactorsFunction",IsMonoidCharacter);
 
 
 
@@ -77,13 +79,13 @@ DeclareAttribute("DiagonalOfCharacterTables",IsSemigroup);
 
 DeclareAttribute("Irr",IsMonoidCharacterTable);
 
-# DeclareAttribute("Pims",IsMonoidCharacterTable);
+DeclareAttribute("Pims",IsMonoidCharacterTable);
 
 
 
 
 
 
-DeclareAttribute("MonoidCartanMatrix",IsSemigroup);
-# DeclareOperation("MonoidCartanMatrix",[IsSemigroup]);
+# DeclareAttribute("MonoidCartanMatrix",IsSemigroup);
+DeclareOperation("MonoidCartanMatrix",[IsSemigroup]);
 
