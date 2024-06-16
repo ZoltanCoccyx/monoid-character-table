@@ -677,33 +677,41 @@ end);
 InstallMethod(DiagonalOfCharacterTables,  "for a semigroup",
 [IsSemigroup],
 function(S)
-  local CS, n, M, idempotents, transversalHclasses, maps, map, XG, CG, h, k,
-  	b, e, G, I, l, i, j;
+  # local CS, n, M, transversalHclasses, maps, map, XG, CG, h, k,
+  # 	b, e, G, I, l, i, j;
+
+  local CS, n, M, transversalHclasses, maps, groups, charactertables,
+      irrs, mats;
 
   CS := GeneralisedConjugacyClassesRepresentatives(S);
   n := Length(CS);
-  M := List([1..n], x -> List([1..n], x -> 0));
-  idempotents := TransversalIdempotents(S);
 
   transversalHclasses := List(RegularDClasses(S), GroupHClass);
   maps := List(transversalHclasses, IsomorphismPermGroup);
+  groups := List(maps, Range);
+  charactertables := List(groups,CharacterTable);
+  irrs := List(charactertables,Irr);
+  mats := List(irrs,x -> List(x,ValuesOfClassFunction));
+  M := DirectSumMat(mats);
 
-  b := 0;
-  for map in maps do
-    G := Range(map);
-    XG := CharacterTable(G);
-    I  := Irr(XG);
-    CG := ConjugacyClasses(XG);
-    l  := Length(I);
-    for i in [1..l] do
-      h := ConjugacyClass(G, CS[i+b] ^ map);
-      for j in [1..l] do
-        k := ConjugacyClass(G, CS[j+b] ^ map);
-        M[i+b][j+b] := I[Position(CG, h)][Position(CG, k)];
-      od;
-    od;
-    b := b + l;
-  od;
+  # b := 0;
+  # for map in maps do
+  #   G := Range(map);
+  #   XG := CharacterTable(G);
+  #   I  := Irr(XG);
+  #   CG := ConjugacyClasses(XG);
+  #   l  := Length(I);
+  #   for i in [1..l] do
+  #     h := ConjugacyClass(G, CS[i+b] ^ map);
+  #     for j in [1..l] do
+  #       k := ConjugacyClass(G, CS[j+b] ^ map);
+  #       M[i+b][j+b] := I[Position(CG, h)][Position(CG, k)];
+  #     od;
+  #   od;
+  #   b := b + l;
+  # od;
+
+  
 
   SetDiagonalOfCharacterTables(S,M);
 
@@ -781,7 +789,7 @@ function(ct)
   R := Concatenation(List(transversalHclasses, RClassBicharacterOfGroupHClass));
   Rrad := Concatenation(List(transversalHclasses, RClassRadicalBicharacterOfGroupHClass));
 
-  irrvalues := Inverse(TransposedMatMutable(D)) * (R - Rrad);
+  irrvalues := Inverse(TransposedMat(D)) * (R - Rrad);
 
   out := List(irrvalues, x -> MonoidCharacter(ct,x));
 
@@ -838,6 +846,43 @@ end);
 ##  <#/GAPDoc>
 ##
 
+
+
+# InstallMethod(MonoidCharacter,  " ",
+# [IsMonoidCharacterTable, IsDenseList],
+# function(ct,values)
+#   local result;
+
+#   result := Objectify(MonoidCharacterType, rec());
+#   SetParentAttr(result, ct);
+#   SetValuesOfMonoidClassFunction(result, values);
+
+#   return result;
+# end);
+
+
+
+# InstallMethod(Pims,  "for a semigroup",
+# [IsMonoidCharacterTable],
+# function(ct)
+#   local C, S, M, out;
+
+#   S := ParentAttr(ct);
+
+#   C := List(Irr(ct),ValuesOfMonoidClassFunction);
+
+#   M := RegularRepresentationBicharacter(S);
+
+#   out := Inverse(TransposedMatMutable(C)) * M * Inverse(C);
+
+
+
+#   return out;
+# end);
+
+
+
+
 InstallMethod(MonoidCartanMatrix,  "for a semigroup",
 [IsSemigroup],
 function(S)
@@ -853,3 +898,6 @@ function(S)
 
   return out;
 end);
+
+
+
