@@ -48,6 +48,10 @@ DeclareAttribute("ParentAttr",IsMonoidCharacter);
 
 DeclareAttribute("ValuesOfMonoidClassFunction",IsMonoidCharacterTable);
 
+# DeclareAttribute("ProjectiveCoverOf",IsMonoidCharacter);
+
+# DeclareAttribute("ValueOfCompositionFactorsFunction",IsMonoidCharacter);
+
 
 
 
@@ -73,10 +77,13 @@ DeclareAttribute("DiagonalOfCharacterTables",IsSemigroup);
 
 DeclareAttribute("Irr",IsMonoidCharacterTable);
 
+# DeclareAttribute("Pims",IsMonoidCharacterTable);
+
 
 
 
 
 
 DeclareAttribute("MonoidCartanMatrix",IsSemigroup);
+# DeclareOperation("MonoidCartanMatrix",[IsSemigroup]);
 
