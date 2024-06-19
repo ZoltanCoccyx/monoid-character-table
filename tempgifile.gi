@@ -89,7 +89,13 @@ function(S,s)
   return result;
 end);
 
-
+InstallMethod(ViewString, "for a Generalised Conjugacy Class",
+[IsGeneralisedConjugacyClass],
+function(generalizedconjugacyclass)
+  return StringFormatted("<Generalised Conjugacy Class in semigroup {} for representative {}>",
+  ParentAttr(generalizedconjugacyclass),
+  Representative(generalizedconjugacyclass));
+end);
 
 
 
