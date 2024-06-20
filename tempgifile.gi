@@ -92,7 +92,7 @@ end);
 InstallMethod(ViewString, "for a Generalised Conjugacy Class",
 [IsGeneralisedConjugacyClass],
 function(generalizedconjugacyclass)
-  return StringFormatted("<Generalised Conjugacy Class in semigroup {} for representative {}>",
+  return StringFormatted("<Generalised Conjugacy Class in {} for representative {}>",
   ParentAttr(generalizedconjugacyclass),
   Representative(generalizedconjugacyclass));
 end);
@@ -238,7 +238,12 @@ function(S)
   return result;
 end);
 
-
+InstallMethod(ViewString, "for a Monoid Character Table",
+[IsMonoidCharacterTable],
+function(ct)
+  return StringFormatted("MonoidCharacterTable( {} )",
+  ParentAttr(ct))
+end);
 
 
 
@@ -273,7 +278,13 @@ function(ct,values)
   return result;
 end);
 
-
+InstallMethod(ViewString, "for a Monoid Character",
+[IsMonoidCharacter],
+function(char)
+  return StringFormatted("MonoidCharacter( {} , {} )",
+  ParentAttr(char),
+  ValuesOfMonoidClassFunction(char))
+end);
 
 
 
@@ -897,7 +908,7 @@ InstallMethod(MonoidCartanMatrix,  "for a semigroup",
 function(S)
   local out;
 
-  out := List(Pims(MonoidCharacterTable(S)),ValueOfCompositionFactorsFunction);
+  out := List(Pims(MonoidCharacterTable(S)),ValuesOfCompositionFactorsFunction);
 
   # SetMonoidCartanMatrix(S,out);
 
