@@ -242,7 +242,7 @@ InstallMethod(ViewString, "for a Monoid Character Table",
 [IsMonoidCharacterTable],
 function(ct)
   return StringFormatted("MonoidCharacterTable( {} )",
-  ParentAttr(ct))
+  ParentAttr(ct));
 end);
 
 
@@ -281,9 +281,18 @@ end);
 InstallMethod(ViewString, "for a Monoid Character",
 [IsMonoidCharacter],
 function(char)
-  return StringFormatted("MonoidCharacter( {} , {} )",
-  ParentAttr(char),
-  ValuesOfMonoidClassFunction(char))
+  local str;
+  if HasValuesOfMonoidClassFunction(char) then
+    str := StringFormatted("MonoidCharacter( {} , {} )",
+           ParentAttr(char),
+           ValuesOfMonoidClassFunction(char));
+  elif HasProjectiveCoverOf( char ) then
+    str := StringFormatted("MonoidCharacter( {} , Projective Cover Of {} )",
+           ParentAttr(char),
+           ProjectiveCoverOf( char ));
+  fi;
+
+  return str;
 end);
 
 
