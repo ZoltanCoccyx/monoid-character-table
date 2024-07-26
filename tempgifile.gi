@@ -284,12 +284,12 @@ function(char)
   local str;
   if HasValuesOfMonoidClassFunction(char) then
     str := StringFormatted("MonoidCharacter( {} , {} )",
-           ParentAttr(char),
+           ViewString(ParentAttr(char)),
            ValuesOfMonoidClassFunction(char));
   elif HasProjectiveCoverOf( char ) then
     str := StringFormatted("MonoidCharacter( {} , Projective Cover Of {} )",
-           ParentAttr(char),
-           ProjectiveCoverOf( char ));
+           ViewString(ParentAttr(char)),
+           ViewString(ProjectiveCoverOf( char )));
   fi;
 
   return str;
